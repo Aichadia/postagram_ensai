@@ -34,10 +34,10 @@ app.add_middleware(
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-	exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
-	logger.error(f"{request}: {exc_str}")
-	content = {'status_code': 10422, 'message': exc_str, 'data': None}
-	return JSONResponse(content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
+    logger.error(f"{request}: {exc_str}")
+    content = {'status_code': 10422, 'message': exc_str, 'data': None}
+    return JSONResponse(content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
 class Post(BaseModel):
@@ -59,8 +59,6 @@ bucket = os.getenv("BUCKET")
 ####################################################################################################
 
 
-
-
 @app.post("/posts")
 async def post_a_post(post: Post, authorization: str | None = Header(default=None)):
     """
@@ -70,39 +68,103 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
     logger.info(f"body : {post.body}")
     logger.info(f"user : {authorization}")
 
+    post_id = f"POST#{uuid.uuid4()}"
 
-    # Doit retourner le résultat de la requête la table dynamodb
+    res = table.put_item(
+        Item={
+            "user": authorization,
+            "id": post_id,
+            "title": post.title,
+            "body": post.body,
+            "label": [],
+        }
+    )
+
     return res
+
 
 @app.get("/posts")
 async def get_all_posts(user: Union[str, None] = None):
     """
-    Récupère tout les postes. 
-    - Si un user est présent dans le requête, récupère uniquement les siens
-    - Si aucun user n'est présent, récupère TOUS les postes de la table !!
+    Recupere tout les postes.
+    - Si un user est present dans la requete, recupere uniquement les siens
+    - Si aucun user n'est present, recupere TOUS les postes de la table
     """
-    if user :
-        logger.info(f"Récupération des postes de : {user}")
-    else :
-        logger.info("Récupération de tous les postes")
-     # Doit retourner une liste de posts
-    return res[""]
+    if user:
+        logger.info(f"Recuperation des postes de : {user}")
+        res = get_posts_by_user(user)
+    else:
+        logger.info("Recuperation de tous les postes")
+        res = get_all_posts_from_db()
 
-    
+    return res
+
+
+def get_all_posts_from_db():
+    """Scan complet de la table DynamoDB."""
+    res = table.scan()
+    items = res.get("Items", [])
+    return [format_post(item) for item in items]
+
+
+def get_posts_by_user(username: str):
+    """Query sur la partition key user."""
+    from boto3.dynamodb.conditions import Key
+    res = table.query(
+        KeyConditionExpression=Key("user").eq(username)
+    )
+    items = res.get("Items", [])
+    return [format_post(item) for item in items]
+
+
+def format_post(item: dict) -> dict:
+    """Formate un item DynamoDB et genere l'URL presignee pour l'image."""
+    image_url = None
+    if item.get("image"):
+        try:
+            image_url = s3_client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": bucket, "Key": item["image"]},
+                ExpiresIn=3600,
+            )
+        except Exception as e:
+            logger.error(f"Erreur generation URL presignee : {e}")
+
+    return {
+        "user": item.get("user"),
+        "id": item.get("id"),
+        "title": item.get("title"),
+        "body": item.get("body"),
+        "image": image_url,
+        "label": item.get("label", []),
+    }
+
+
 @app.delete("/posts/{post_id}")
 async def delete_post(post_id: str, authorization: str | None = Header(default=None)):
-    # Doit retourner le résultat de la requête la table dynamodb
     logger.info(f"post id : {post_id}")
     logger.info(f"user: {authorization}")
-    # Récupération des infos du poste
+
+    # Recuperation des infos du poste
+    res = table.get_item(
+        Key={"user": authorization, "id": post_id}
+    )
+    item = res.get("Item")
 
     # S'il y a une image on la supprime de S3
+    if item and item.get("image"):
+        try:
+            s3_client.delete_object(Bucket=bucket, Key=item["image"])
+            logger.info(f"Image supprimee de S3 : {item['image']}")
+        except Exception as e:
+            logger.error(f"Erreur suppression S3 : {e}")
 
     # Suppression de la ligne dans la base dynamodb
+    result = table.delete_item(
+        Key={"user": authorization, "id": post_id}
+    )
 
-    # Retourne le résultat de la requête de suppression
-    return item
-
+    return result
 
 
 #################################################################################################
@@ -111,7 +173,7 @@ async def delete_post(post_id: str, authorization: str | None = Header(default=N
 ##                                                                                             ##
 ## 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 👇 ##
 @app.get("/signedUrlPut")
-async def get_signed_url_put(filename: str,filetype: str, postId: str,authorization: str | None = Header(default=None)):
+async def get_signed_url_put(filename: str, filetype: str, postId: str, authorization: str | None = Header(default=None)):
     return getSignedUrl(filename, filetype, postId, authorization)
 
 if __name__ == "__main__":
