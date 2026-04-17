@@ -34,7 +34,8 @@ function Post({ post, removePost, updatePost }) {
         if (!attachment) {
             alert("Please select a file to upload.");
         }
-        const postId = post.id.split("#")[1];
+        // Pour getSignedUrlPut
+        const postId = post.id.split("-").slice(1).join("-");
         const uploadUrl = await getSignedUrlPut(postId);
 
         const config = {
@@ -55,7 +56,7 @@ function Post({ post, removePost, updatePost }) {
     }
 
     const deletePost = async () => {
-        const id = post.id.split("#")[1];
+        const id = post.id.split("-").slice(1).join("-");
         console.log(`/posts/${post.id}`)
         axios.delete(`/posts/${id}`, { headers: { Authorization: getToken() } })
             .then(res => {
