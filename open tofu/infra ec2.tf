@@ -116,6 +116,18 @@ resource "aws_lb_listener" "http_listener" {
   }
 
 ########################################
+# Règle Security Group port 8080
+########################################
+resource "aws_security_group_rule" "allow_8080" {
+  type              = "ingress"
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.web_sg.id
+}
+
+########################################
 # Outputs
 ########################################
 output "load_balancer_dns_name" {
