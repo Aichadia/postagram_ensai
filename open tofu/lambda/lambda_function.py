@@ -40,7 +40,7 @@ def lambda_handler(event, context):
                 logger.warning(f"Format de clé invalide : {key}")
                 continue
 
-            user = parts[0]
+            user = f"USER#{parts[0]}"
             post_id = parts[1]
 
             logger.info(f"User : {user}")

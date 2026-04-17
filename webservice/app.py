@@ -72,7 +72,7 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
 
     res = table.put_item(
         Item={
-            "user": authorization,
+            "user": f"USER#{authorization}",
             "id": post_id,
             "title": post.title,
             "body": post.body,
@@ -111,7 +111,7 @@ def get_posts_by_user(username: str):
     """Query sur la partition key user."""
     from boto3.dynamodb.conditions import Key
     res = table.query(
-        KeyConditionExpression=Key("user").eq(username)
+        KeyConditionExpression=Key("user").eq(f"USER#{username}")
     )
     items = res.get("Items", [])
     return [format_post(item) for item in items]
@@ -147,7 +147,7 @@ async def delete_post(post_id: str, authorization: str | None = Header(default=N
 
     # Recuperation des infos du poste
     res = table.get_item(
-        Key={"user": authorization, "id": post_id}
+        Key={"user": f"USER#{authorization}", "id": post_id}
     )
     item = res.get("Item")
 
@@ -161,7 +161,7 @@ async def delete_post(post_id: str, authorization: str | None = Header(default=N
 
     # Suppression de la ligne dans la base dynamodb
     result = table.delete_item(
-        Key={"user": authorization, "id": post_id}
+        Key={"user": f"USER#{authorization}", "id": post_id}
     )
 
     return result
