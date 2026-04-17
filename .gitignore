@@ -5,4 +5,5 @@ open tofu/.terraform.lock.hcl
 
 *.tfstate
 *.tfstate.backup
-output/
+output/webservice/__pycache__/
+.env
