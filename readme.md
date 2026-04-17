@@ -4,6 +4,69 @@ title: "TP noté2 - Faire une API REST 100% serverless 🧰"
 nav_exclude: true
 ---
 
+#  INSTRUCTIONS DE NOTRE POSTAGRAM ENSAI
+
+## Installation
+
+1. Cloner le repo :
+
+```bash
+git clone <url_du_repo>
+cd postagram_ensai
+```
+
+2. Déployer l’infra AWS avec OpenTofu :
+
+```bash
+cd "open tofu"
+tofu init
+tofu apply
+```
+
+3. Récupérer le nom du bucket (affiché dans les outputs).
+
+4. Créer un fichier `.env` dans `webservice/` :
+
+```env
+BUCKET=<nom_du_bucket>
+DYNAMO_TABLE=postagram
+AWS_DEFAULT_REGION=us-east-1
+```
+
+## Lancer le backend
+
+```bash
+cd webservice
+source venv/bin/activate
+pip install -r requirements.txt
+python3 app.py
+```
+
+Le serveur tourne sur :  
+http://localhost:8080
+
+## Comment ça marche
+
+- On crée un post via `/posts`
+- On demande une URL signée avec `/signedUrlPut`
+- On upload l’image dans S3
+- Ça déclenche automatiquement une Lambda :
+  - Rekognition détecte les labels
+  - Le post est mis à jour dans DynamoDB
+- On récupère les posts avec `/posts`
+
+## Structure des données
+
+- user : `USER#username`
+- post : `POST-uuid`
+- images stockées dans S3 :
+  `user/post_id/image_name`
+
+## Notes
+
+- Les labels sont générés automatiquement avec AWS Rekognition
+- Le `.env` n’est pas dans le repo → à recréer localement
+
 # Devoir noté 2 : Postagram
 
 Ce sujet peut paraître imposant et impossible à terminer mais ce n'est pas le cas. Il ne contient que peu de code à écrire (maximum 100 lignes de python, et une infrastructure déjà vue). Résultat, avancez pas à pas, il n'est pas demandé de le rendre à la fin du TP. Le rendu final est attendu pour le 14 mai.
