@@ -10,3 +10,4 @@ output/webservice/__pycache__/
 open tofu/output/
 webservice/__pycache__/
 *.pyc
+webservice/.env
