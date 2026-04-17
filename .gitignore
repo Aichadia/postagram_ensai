@@ -7,3 +7,6 @@ open tofu/.terraform.lock.hcl
 *.tfstate.backup
 output/webservice/__pycache__/
 .env
+open tofu/output/
+webservice/__pycache__/
+*.pyc
