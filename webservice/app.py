@@ -68,7 +68,7 @@ async def post_a_post(post: Post, authorization: str | None = Header(default=Non
     logger.info(f"body : {post.body}")
     logger.info(f"user : {authorization}")
 
-    post_id = f"POST#{uuid.uuid4()}"
+    post_id = f"POST-{uuid.uuid4()}"
 
     res = table.put_item(
         Item={
