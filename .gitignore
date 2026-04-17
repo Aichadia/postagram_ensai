@@ -2,3 +2,7 @@
 
 open tofu/.terraform
 open tofu/.terraform.lock.hcl
+
+*.tfstate
+*.tfstate.backup
+output/
