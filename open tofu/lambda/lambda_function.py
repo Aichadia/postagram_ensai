@@ -41,7 +41,7 @@ def lambda_handler(event, context):
                 continue
 
             user = f"USER#{parts[0]}"
-            post_id = parts[1]
+            post_id = f"POST-{parts[1]}"
 
             logger.info(f"User : {user}")
             logger.info(f"Post ID : {post_id}")

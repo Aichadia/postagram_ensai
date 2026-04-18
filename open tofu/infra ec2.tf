@@ -25,7 +25,7 @@ resource "aws_launch_template" "ubuntu_template" {
     bucket       = aws_s3_bucket.bucket.bucket
   }))
 
-  vpc_security_group_ids = [aws_security_group.web_sg.id]
+  vpc_security_group_ids = [aws_security_group.web_sg.id, aws_security_group.sg_8080.id]
 
   block_device_mappings {
     device_name = "/dev/sda1"
@@ -133,13 +133,22 @@ resource "aws_lb_listener" "http_listener" {
 # Règle Security Group port 8080
 ########################################
 
-resource "aws_security_group_rule" "allow_8080" {
-  type              = "ingress"
-  from_port         = 8080
-  to_port           = 8080
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.web_sg.id
+resource "aws_security_group" "sg_8080" {
+  name        = "postagram-8080"
+  description = "Autorise le port 8080"
+  vpc_id      = data.aws_vpc.default.id
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 ########################################
